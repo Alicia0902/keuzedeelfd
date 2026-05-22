@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO meta-tags -->
+  <meta name="description" content="View all Pokémon, filter by type, sort by weight or height and save your favorites." />
+  <meta name="keywords" content="pokemon, pokedex, pokemon viewer, pokemon compare" />
+  <meta property="og:title" content="Pokémon Viewer" />
+  <meta property="og:description" content="Search, filter and compare Pokémon with the Pokémon Viewer app." />
+
+  <title>Pokémon Viewer</title>
+
+  <link rel="stylesheet" href="src/output.css" />
+  <link rel="stylesheet" href="css/css.css" />
+</head>
+<body class="bg-gray-100">
+  <div class="filterbalk">
+    <div class="filterbalk-item">
+      <label for="typeFilter">Type:</label>
+      <select id="typeFilter">
+        <option value="">All types</option>
+        <option value="normal">Normal</option>
+        <option value="fire">Fire</option>
+        <option value="water">Water</option>
+        <option value="electric">Electric</option>
+        <option value="grass">Grass</option>
+        <option value="ice">Ice</option>
+        <option value="fighting">Fighting</option>
+        <option value="poison">Poison</option>
+        <option value="ground">Ground</option>
+        <option value="flying">Flying</option>
+        <option value="psychic">Psychic</option>
+        <option value="bug">Bug</option>
+        <option value="rock">Rock</option>
+        <option value="ghost">Ghost</option>
+        <option value="dragon">Dragon</option>
+        <option value="dark">Dark</option>
+        <option value="steel">Steel</option>
+        <option value="fairy">Fairy</option>
+      </select>
+    </div>
+
+    <div class="filterbalk-item">
+      <label for="formFilter">Form:</label>
+      <select id="formFilter">
+        <option value="all">All</option>
+        <option value="base">Base only</option>
+        <option value="gmax">Gmax only</option>
+      </select>
+    </div>
+
+    <div class="filterbalk-item">
+      <label for="sortOrder">Sorting:</label>
+      <select id="sortOrder">
+        <option value="num-asc">ID ↑</option>
+        <option value="num-desc">ID ↓</option>
+        <option value="a-z">Name A-Z</option>
+        <option value="z-a">Name Z-A</option>
+        <option value="type-asc">Type A-Z</option>
+        <option value="type-desc">Type Z-A</option>
+        <option value="weight-asc">Weight ↑</option>
+        <option value="weight-desc">Weight ↓</option>
+        <option value="height-asc">Height ↑</option>
+        <option value="height-desc">Height ↓</option>
+      </select>
+    </div>
+  
+
+    <div class="filterbalk-item" style="position:relative;">
+<div class="filterbalk-item" style="position:relative; margin-left:auto;">
+  <button id="favorietenBtn">❤️ Favorites</button>
+  <button id="vergelijkBtn">⚔️ Compare</button>
+</div>
+      <div id="favorietenDropdown" style="display:none; position:absolute; top:100%; left:0; background:white; border:1px solid #ccc; padding:10px; z-index:100; min-width:150px;">
+        <p id="favorietenLeeg">No favorites saved.</p>
+        <ul id="favorietenLijst" style="list-style:none; padding:0; margin:0;"></ul>
+      </div>
+    </div>
+  </div>
+
+  <main class="pokemon-main">
+    <section class="kolom-links">
+      <h1 class="pokemon-label">Pokémon name:</h1>
+      <h2 id="name" class="pokemon-naam">Bulbasaur</h2>
+
+      <div class="pokemon-card">
+        <div class="card-header">
+          <span id="cardName" class="card-title"></span>
+          <span id="cardHp" class="card-hp"></span>
+          <button id="favoriteBtn">❤️</button>
+        </div>
+
+        <div class="card-image-frame">
+          <img id="pokemonImage" src="" alt="Pokémon afbeelding" />
+        </div>
+
+        <div class="card-footer">
+          <span id="cardType" class="card-type-label"></span>
+        </div>
+      </div>
+
+      <div class="evolutions">
+        <p><strong>EVOLUTIONS</strong></p>
+        <div id="evoList" class="evo-list"></div>
+      </div>
+    </section>
+
+    <section class="kolom-rechts">
+      <p><strong>TYPE:</strong> <span id="type"></span></p>
+      <p><strong>ID:</strong> <span id="id"></span></p>
+      <p><strong>WEIGHT:</strong> <span id="weight"></span></p>
+      <p><strong>HEIGHT:</strong> <span id="heightValue"></span></p>
+
+      <div class="info-blok">
+        <p><strong>OVER:</strong></p>
+        <div id="description"></div>
+      </div>
+
+      <div class="info-blok">
+        <p><strong>STATS:</strong></p>
+        <div id="stats"></div>
+      </div>
+
+      <div class="info-blok">
+        <p><strong>MOVES:</strong></p>
+        <div id="moves"></div>
+      </div>
+
+      <div class="info-blok">
+        <p><strong>ABILITIES:</strong></p>
+        <div id="abilities"></div>
+      </div>
+    </section>
+  </main>
+
+  <button id="previousArrow" class="pijl pijl-links" aria-label="Vorige Pokémon">&#10094;</button>
+  <button id="nextArrow" class="pijl pijl-rechts" aria-label="Volgende Pokémon">&#10095;</button>
+
+  <script src="Javascript/js.js"></script>
+</body>
+</html>

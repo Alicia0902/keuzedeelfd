@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<title>Mini Pokedex</title>
+</head>
+<body class="bg-gray-100 p-6">
+
+<h1 class="text-3xl font-bold mb-6 text-center">Pokédex</h1>
+
+<!-- Filter Balk -->
+<div class="flex flex-col md:flex-row gap-4 mb-6">
+
+  <input id="searchInput" type="text" placeholder="Zoek op naam of nummer..."
+    class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-400">
+
+  <select id="typeFilter"
+    class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-400">
+    <option value="">Alle types</option>
+  </select>
+
+  <select id="sortOrder"
+    class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-400">
+    <option value="">Sorteer</option>
+    <option value="a-z">Naam A-Z</option>
+    <option value="z-a">Naam Z-A</option>
+    <option value="num-asc">Nummer oplopend</option>
+    <option value="num-desc">Nummer aflopend</option>
+  </select>
+
+</div>
+
+<!-- Pokemon Grid -->
+<div id="pokemonGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+
+<script>
+const searchInput = document.getElementById("searchInput");
+const typeFilter = document.getElementById("typeFilter");
+const sortOrder = document.getElementById("sortOrder");
+const pokemonGrid = document.getElementById("pokemonGrid");
+
+let allPokemon = [];
+
+async function loadTypes() {
+  const res = await fetch("https://pokeapi.co/api/v2/type");
+  const data = await res.json();
+  data.results.forEach(type => {
+    let option = document.createElement("option");
+    option.value = type.name;
+    option.textContent = type.name;
+    typeFilter.appendChild(option);
+  });
+}
+
+async function loadPokemon() {
+  const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=200");
+  const data = await res.json();
+  
+  for (let p of data.results) {
+    const pokeRes = await fetch(p.url);
+    const pokeData = await pokeRes.json();
+    allPokemon.push(pokeData);
+  }
+  renderPokemon(allPokemon);
+}
+
+function renderPokemon(list) {
+  pokemonGrid.innerHTML = "";
+  list.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "bg-white p-4 rounded-xl shadow text-center";
+    card.innerHTML = `
+      <img src="${p.sprites.front_default}" class="mx-auto">
+      <h2 class="capitalize font-bold mt-2">#${p.id} ${p.name}</h2>
+      <p class="text-sm text-gray-500">${p.types.map(t => t.type.name).join(", ")}</p>
+    `;
+    pokemonGrid.appendChild(card);
+  });
+}
+
+function filterAndSort() {
+  let filtered = [...allPokemon];
+
+  const searchText = searchInput.value.toLowerCase();
+  const selectedType = typeFilter.value;
+  const sortValue = sortOrder.value;
+
+  filtered = filtered.filter(p =>
+    p.name.includes(searchText) ||
+    p.id.toString().includes(searchText)
+  );
+
+  if (selectedType) {
+    filtered = filtered.filter(p =>
+      p.types.some(t => t.type.name === selectedType)
+    );
+  }
+
+  filtered.sort((a,b) => {
+    if(sortValue === "a-z") return a.name.localeCompare(b.name);
+    if(sortValue === "z-a") return b.name.localeCompare(a.name);
+    if(sortValue === "num-asc") return a.id - b.id;
+    if(sortValue === "num-desc") return b.id - a.id;
+    return 0;
+  });
+
+  renderPokemon(filtered);
+}
+
+searchInput.addEventListener("input", filterAndSort);
+typeFilter.addEventListener("change", filterAndSort);
+sortOrder.addEventListener("change", filterAndSort);
+
+loadTypes();
+loadPokemon();
+</script>
+
+</body>
+</html>

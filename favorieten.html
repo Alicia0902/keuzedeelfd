@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO meta-tags -->
+  <meta name="description" content="View your saved favorite Pokémon." />
+  <meta name="keywords" content="pokemon favorites, favorite pokemon" />
+  <meta property="og:title" content="My Favorites - Pokémon Viewer" />
+  <meta property="og:description" content="All your saved favorite Pokémon in one place." />
+  
+  <title>My Favorites</title>
+  <link rel="stylesheet" href="src/output.css" />
+  <link rel="stylesheet" href="css/css.css" />
+  <style>
+    .favorieten-header {
+      max-width: 1200px;
+      margin: 16px auto;
+      padding: 12px 16px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .favorieten-header h1 {
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .terug-btn {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .terug-btn:hover {
+      background: #e5e7eb;
+    }
+    .favorieten-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .fav-kaart {
+      width: 160px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .fav-kaart:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 16px rgba(0,0,0,.15);
+    }
+    .fav-kaart img {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+    }
+    .fav-kaart-naam {
+      margin-top: 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .leeg-melding {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 16px;
+      font-size: 18px;
+      color: #6b7280;
+      text-align: center;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+  <div class="favorieten-header">
+    <h1>❤️ My favorites</h1>
+    <a href="index.html">
+      <button class="terug-btn">← Back to all Pokémon</button>
+    </a>
+  </div>
+
+  <div id="favorietenGrid" class="favorieten-grid"></div>
+  <p id="leegMelding" class="leeg-melding" style="display:none;">You haven't saved any favorites yet.</p>
+
+  <script>
+    const apiBase = "https://pokeapi.co/api/v2/pokemon/";
+
+    // Geeft de beste beschikbare afbeelding terug
+    function getBestSprite(pokeData) {
+      return (
+        pokeData?.sprites?.other?.["official-artwork"]?.front_default ||
+        pokeData?.sprites?.other?.home?.front_default ||
+        pokeData?.sprites?.front_default ||
+        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokeData.id}.png`
+      );
+    }
+
+    // Zet naam om naar nette weergave
+    function formatLabel(value = "") {
+      return value
+        .split("-")
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(" ");
+    }
+
+    // Laadt alle favoriete Pokémon en toont ze als kaarten
+    async function laadFavorieten() {
+      const favorieten = JSON.parse(localStorage.getItem("favorieten")) || [];
+      const grid = document.getElementById("favorietenGrid");
+      const leeg = document.getElementById("leegMelding");
+
+      if (favorieten.length === 0) {
+        leeg.style.display = "block";
+        return;
+      }
+
+      for (const naam of favorieten) {
+        try {
+          const res = await fetch(`${apiBase}${naam.toLowerCase()}`);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const sprite = getBestSprite(data);
+          const mainType = data.types?.[0]?.type?.name || "";
+
+          const kaart = document.createElement("div");
+          kaart.className = "fav-kaart";
+          if (mainType) kaart.setAttribute("data-type", mainType);
+
+          kaart.innerHTML = `
+            <img src="${sprite}" alt="${formatLabel(naam)}" />
+            <div class="fav-kaart-naam">${formatLabel(naam)}</div>
+          `;
+
+          // Klik op kaart → ga naar index.html in favorietenmodus met deze Pokémon
+          kaart.addEventListener("click", () => {
+            localStorage.setItem("favorietenModus", "true");
+            localStorage.setItem("geselecteerdePokemon", naam.toLowerCase());
+            window.location.href = "index.html";
+          });
+
+          grid.appendChild(kaart);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    laadFavorieten();
+  </script>
+</body>
+</html>

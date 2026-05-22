@@ -1,0 +1,5 @@
+/*
+  Dit is het startbestand voor Tailwind.
+  De Tailwind leest dit bestand en maakt daarna src/output.css.
+*/
+@import "tailwindcss";

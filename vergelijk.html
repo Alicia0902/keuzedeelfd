@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- SEO meta-tags -->
+  <meta name="description" content="Compare two Pokémon side by side on stats, weight and height." />
+  <meta name="keywords" content="pokemon compare, pokemon stats" />
+  <meta property="og:title" content="Compare Pokémon - Pokémon Viewer" />
+  <meta property="og:description" content="Compare two Pokémon side by side and see who has the best stats." />
+  <title>Compare Pokémon's</title>
+
+  <!-- Tailwind CSS via CDN zodat we utility classes kunnen gebruiken -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Lettertype van Google Fonts laden voor een speels Pokémon-gevoel */
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+
+    body {
+      font-family: 'Nunito', sans-serif;
+    }
+
+    /* Animatie: kaart schuift omhoog als de pagina laadt */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Klassen voor de inkomst-animatie van de twee kaarten */
+    .slide-in-left  { animation: slideUp 0.5s ease forwards; }
+    .slide-in-right { animation: slideUp 0.5s ease 0.15s forwards; opacity: 0; }
+
+    /* Stijl voor de stat-balk (de gekleurde balk bij elke stat) */
+    .stat-bar-fill {
+      height: 10px;
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    @media (max-width: 600px) {
+  /* Zoekbalken en kaarten onder elkaar op mobiel */
+  .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- =============================================
+       BOVENSTE BALK — titel en terugknop
+  ============================================= -->
+  <div class="max-w-6xl mx-auto px-4 py-4">
+    <div class="bg-white rounded-2xl shadow px-6 py-4 flex items-center justify-between">
+
+      <!-- Paginatitel -->
+      <h1 class="text-2xl font-black text-gray-800">⚔️ Compare Pokémon's</h1>
+
+      <!-- Knop om terug te gaan naar de hoofdpagina -->
+      <a href="index.html">
+        <button class="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-xl px-4 py-2 font-bold text-sm transition">
+          ← Back to all Pokémon
+        </button>
+      </a>
+    </div>
+  </div>
+
+  <!-- =============================================
+       ZOEKBALKEN — één per Pokémon
+  ============================================= -->
+  <div class="max-w-6xl mx-auto px-4 pb-4 grid grid-cols-2 gap-4">
+
+    <!-- Zoekbalk voor Pokémon 1 -->
+    <div class="bg-white rounded-2xl shadow px-6 py-4 flex gap-2">
+      <input
+        id="zoek1"
+        type="text"
+        placeholder="First Pokémon"
+        class="flex-1 border border-gray-300 rounded-xl px-4 py-2 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+      <!-- Knop om Pokémon 1 te laden -->
+      <button
+        onclick="laadPokemon(1)"
+        class="bg-blue-500 hover:bg-blue-600 text-white rounded-xl px-4 py-2 font-bold text-sm transition"
+      >
+        Search
+      </button>
+    </div>
+
+    <!-- Zoekbalk voor Pokémon 2 -->
+    <div class="bg-white rounded-2xl shadow px-6 py-4 flex gap-2">
+      <input
+        id="zoek2"
+        type="text"
+        placeholder="Second Pokémon"
+        class="flex-1 border border-gray-300 rounded-xl px-4 py-2 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+      />
+      <!-- Knop om Pokémon 2 te laden -->
+      <button
+        onclick="laadPokemon(2)"
+        class="bg-red-500 hover:bg-red-600 text-white rounded-xl px-4 py-2 font-bold text-sm transition"
+      >
+        Search
+      </button>
+    </div>
+  </div>
+
+  <!-- =============================================
+       VERGELIJKINGSKAARTEN — twee naast elkaar
+  ============================================= -->
+  <div class="max-w-6xl mx-auto px-4 pb-8 grid grid-cols-2 gap-4" id="vergelijkGrid">
+
+    <!-- Kaart Pokémon 1 — begint leeg, wordt gevuld door JavaScript -->
+    <div id="kaart1" class="bg-white rounded-2xl shadow-lg p-6 slide-in-left">
+      <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+        <span class="text-5xl mb-3">🔵</span>
+        <p class="font-bold">Search for a Pokémon above</p>
+      </div>
+    </div>
+
+    <!-- Kaart Pokémon 2 — begint leeg -->
+    <div id="kaart2" class="bg-white rounded-2xl shadow-lg p-6 slide-in-right">
+      <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+        <span class="text-5xl mb-3">🔴</span>
+        <p class="font-bold">Search for a Pokémon above</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================
+       JAVASCRIPT — alle logica voor de vergelijking
+  ============================================= -->
+  <script>
+    // Het basis-adres van de PokéAPI
+    const apiBase = "https://pokeapi.co/api/v2/pokemon/";
+
+    // Hier slaan we de data op van de twee geladen Pokémon
+    // null = nog niet geladen
+    let pokemonData = { 1: null, 2: null };
+
+    // Kleuren voor de stat-balkjes — blauw voor Pokémon 1, rood voor Pokémon 2
+    const statKleuren = {
+      1: "bg-blue-500",
+      2: "bg-red-500",
+    };
+
+    // Zet een naam zoals "bulbasaur" om naar "Bulbasaur"
+    function formatLabel(value = "") {
+      return value
+        .split("-")
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(" ");
+    }
+
+    // Haalt de beste afbeelding op voor een Pokémon
+    function getBestSprite(data) {
+      return (
+        data?.sprites?.other?.["official-artwork"]?.front_default ||
+        data?.sprites?.front_default ||
+        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${data.id}.png`
+      );
+    }
+
+    // Laadt een Pokémon via de API en toont hem in de juiste kaart
+    async function laadPokemon(slot) {
+      // Haal de ingevoerde naam op uit het juiste zoekveld
+      const invoer = document.getElementById(`zoek${slot}`).value.trim().toLowerCase();
+
+      // Als er niets is ingevuld, stop dan
+      if (!invoer) return;
+
+      // Laat een laadindicator zien terwijl we wachten op de API
+      document.getElementById(`kaart${slot}`).innerHTML = `
+        <div class="flex items-center justify-center h-64 text-gray-400">
+          <p class="font-bold animate-pulse">Loading...</p>
+        </div>
+      `;
+
+      try {
+        // Haal de data op van de PokéAPI
+        const res = await fetch(`${apiBase}${invoer}`);
+
+        // Als de Pokémon niet bestaat, gooi dan een foutmelding
+        if (!res.ok) throw new Error("Not found");
+
+        // Zet de API-respons om naar een JavaScript object
+        const data = await res.json();
+
+        // Sla de data op zodat we hem later kunnen vergelijken
+        pokemonData[slot] = data;
+
+        // Toon de Pokémon in de kaart
+        toonKaart(slot, data);
+
+        // Als beide Pokémon geladen zijn, vergelijk dan de stats
+        if (pokemonData[1] && pokemonData[2]) {
+          vergelijkStats();
+        }
+
+      } catch (e) {
+        // Als er een fout is, laat een foutmelding zien
+        document.getElementById(`kaart${slot}`).innerHTML = `
+          <div class="flex items-center justify-center h-64 text-red-400">
+            <p class="font-bold">❌ Pokémon not found. Try a different name.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Bouwt de HTML voor een Pokémonkaart en zet die in het juiste element
+    function toonKaart(slot, data) {
+      // Haal de naam en afbeelding op
+      const naam = formatLabel(data.name);
+      const sprite = getBestSprite(data);
+
+      // Maak een lijst van alle types (sommige Pokémon hebben er twee)
+      const types = data.types.map((t) => formatLabel(t.type.name)).join(" / ");
+
+      // Bouw de HTML voor de kaart — witte achtergrond zonder kleurverloop
+      const html = `
+        <!-- Kaart header met witte achtergrond -->
+        <div class="bg-white rounded-xl p-4 mb-4 text-center">
+          <img src="${sprite}" alt="${naam}" class="w-36 h-36 object-contain mx-auto drop-shadow-lg" />
+          <h2 class="text-2xl font-black mt-2 text-gray-800">${naam}</h2>
+          <p class="text-sm font-bold text-gray-500">${types}</p>
+        </div>
+
+        <!-- Basisinfo: ID, gewicht, hoogte -->
+        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+          <div class="bg-gray-50 rounded-xl p-2">
+            <p class="text-xs text-gray-500 font-bold">ID</p>
+            <p class="font-black text-gray-800">#${data.id}</p>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-2">
+            <p class="text-xs text-gray-500 font-bold">Weight</p>
+            <p class="font-black text-gray-800">${(data.weight / 10).toFixed(1)} kg</p>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-2">
+            <p class="text-xs text-gray-500 font-bold">Height</p>
+            <p class="font-black text-gray-800">${(data.height / 10).toFixed(1)} m</p>
+          </div>
+        </div>
+
+        <!-- Stats sectie — de balkjes worden later gekleurd door vergelijkStats() -->
+        <div>
+          <p class="font-black text-gray-700 mb-2">STATS</p>
+          <div id="stats${slot}" class="space-y-2">
+            ${data.stats.map((s) => `
+              <div>
+                <div class="flex justify-between text-sm font-bold mb-1">
+                  <span class="text-gray-600">${formatLabel(s.stat.name)}</span>
+                  <span class="text-gray-800" id="statval${slot}_${s.stat.name}">${s.base_stat}</span>
+                </div>
+                <!-- De breedte van de balk is gebaseerd op de statwaarde (max 255) -->
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    class="stat-bar-fill ${statKleuren[slot]}"
+                    id="statbar${slot}_${s.stat.name}"
+                    style="width: ${Math.min(s.base_stat / 255 * 100, 100)}%"
+                  ></div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <!-- Abilities — de speciale vaardigheden van de Pokémon -->
+        <div class="mt-4">
+          <p class="font-black text-gray-700 mb-2">ABILITIES</p>
+          <div class="flex flex-wrap gap-2">
+            ${data.abilities.map((a) => `
+              <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full">
+                ${formatLabel(a.ability.name)}
+              </span>
+            `).join("")}
+          </div>
+        </div>
+      `;
+
+      // Zet de gebouwde HTML in de juiste kaart
+      document.getElementById(`kaart${slot}`).innerHTML = html;
+    }
+
+    // Vergelijkt de stats van de twee Pokémon en kleurt de winnende stat groen
+    function vergelijkStats() {
+      // Loop door alle stat-namen
+      const statNamen = pokemonData[1].stats.map((s) => s.stat.name);
+
+      statNamen.forEach((statNaam) => {
+        // Haal de waarde op van beide Pokémon voor deze stat
+        const waarde1 = pokemonData[1].stats.find((s) => s.stat.name === statNaam)?.base_stat || 0;
+        const waarde2 = pokemonData[2].stats.find((s) => s.stat.name === statNaam)?.base_stat || 0;
+
+        // Haal de balkjes op via hun ID
+        const bar1 = document.getElementById(`statbar1_${statNaam}`);
+        const bar2 = document.getElementById(`statbar2_${statNaam}`);
+
+        // Kleur de winnende stat groen, de verliezende lichter
+        if (bar1 && bar2) {
+          if (waarde1 > waarde2) {
+            bar1.classList.replace("bg-blue-500", "bg-green-500");
+            bar2.classList.replace("bg-red-500",  "bg-red-300");
+          } else if (waarde2 > waarde1) {
+            bar2.classList.replace("bg-red-500",  "bg-green-500");
+            bar1.classList.replace("bg-blue-500", "bg-blue-300");
+          }
+          // Als ze gelijk zijn blijven de kleuren zoals ze zijn
+        }
+      });
+    }
+
+    // =============================================
+    // OPSTARTEN — check of er een Pokémon doorgegeven is vanuit index.html
+    // =============================================
+
+    // Als de gebruiker vanuit index.html komt met een Pokémon, laad die dan meteen in slot 1
+    window.addEventListener("load", () => {
+      const doorgestuurd = localStorage.getItem("vergelijkPokemon");
+      if (doorgestuurd) {
+        // Vul het zoekveld in met de naam
+        document.getElementById("zoek1").value = doorgestuurd;
+        // Verwijder de opgeslagen naam zodat het niet dubbel wordt geladen
+        localStorage.removeItem("vergelijkPokemon");
+        // Laad de Pokémon
+        laadPokemon(1);
+      }
+    });
+
+    // Enter-toets in zoekveld 1 triggert ook het laden
+    document.getElementById("zoek1").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") laadPokemon(1);
+    });
+
+    // Enter-toets in zoekveld 2 triggert ook het laden
+    document.getElementById("zoek2").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") laadPokemon(2);
+    });
+  </script>
+</body>
+</html>
